@@ -1,0 +1,15 @@
+.git
+.github
+.gitignore
+.terraform
+*.tfstate*
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+tests
+terraform
+README.md
+.env
+.DS_Store

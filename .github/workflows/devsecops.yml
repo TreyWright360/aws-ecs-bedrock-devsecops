@@ -38,7 +38,7 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          pytest tests/ -v
+          python -m pytest tests/ -v
 
   security-scan:
     name: Trivy Container Vulnerability Scan

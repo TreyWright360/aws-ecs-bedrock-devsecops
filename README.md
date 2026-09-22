@@ -1,5 +1,9 @@
 # 🚀 Containerized GenAI Microservice on AWS ECS Fargate with DevSecOps
 
+> **Portfolio evidence status:** Application, container, tests, Terraform, and CI workflow are published. No dated ECS rollback exercise, latency benchmark, or passing vulnerability-gate report is checked in. The [AWS Cloud Operations Handbook](https://github.com/TreyWright360/aws-cloud-operations-handbook) tracks the remaining operational proof.
+
+See the [project case study](CASE-STUDY.md) for architecture, implementation, failure modes, evidence, and production improvements.
+
 ![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
@@ -13,10 +17,10 @@
 * **Business Challenge:** Engineering teams required an automated, scalable microservice to process and summarize enterprise documents via generative AI, without exposing long-lived credentials or managing underlying virtual machine operating systems.
 * **Solution:** Developed a high-performance Python FastAPI service integrated with **Amazon Bedrock (Claude 3.5 Haiku)**, packaged into a hardened multi-stage Docker container running as an unprivileged non-root user, deployed to **Amazon ECS Fargate**, and secured with an automated **Trivy vulnerability scanning DevSecOps pipeline**.
 * **Key Metric Results:**
-  * 🔒 **Zero Critical Vulnerabilities:** Continuous container vulnerability scanning via Trivy integrated into GitHub Actions.
-  * ⚡ **Sub-100ms API Response Baseline:** Non-blocking asynchronous I/O powered by FastAPI and Uvicorn.
-  * 🛡️ **Least-Privilege Security:** Scoped IAM Task Roles restricting container runtime strictly to `bedrock:InvokeModel`.
-  * 💰 **Near-Zero Idle Cost:** Serverless container execution on AWS Fargate eliminating fixed EC2 instance capacity fees.
+  * 🔒 **Security scan defined:** GitHub Actions runs Trivy, currently with `exit-code: "0"`, so findings do not block deployment.
+  * ⚡ **Latency unmeasured:** No benchmark is checked in.
+  * 🛡️ **Task identity:** The ECS task role permits Bedrock invocation; its policy currently uses `Resource = "*"` and needs scoping review.
+  * 💰 **Cost unmeasured:** The ECS service has `desired_count = 1`, so it incurs running-task charges while deployed.
 
 ---
 
@@ -49,8 +53,8 @@
 
 1. **Unprivileged Non-Root Execution:** The Docker container enforces strict privilege separation by running as dedicated non-root user `appuser` (`UID 10001`), neutralizing container-escape attack vectors.
 2. **Multi-Stage Build Pipeline:** Strips compilers, build headers, and package caches from the runtime image to reduce attack surface and maintain image footprint under 160MB.
-3. **Automated Vulnerability Gate:** GitHub Actions automatically builds and inspects every container image using Aquasec **Trivy**, flagging HIGH and CRITICAL CVEs prior to registry push.
-4. **Role-Based Task Identity:** The application utilizes an AWS ECS Task Role with narrowly scoped IAM policies rather than embedding static API keys or AWS credentials into the container environment.
+3. **Vulnerability scan:** GitHub Actions builds and scans the image with **Trivy**, but the current `exit-code: "0"` means the scan is advisory.
+4. **Role-based task identity:** The application uses an ECS task role instead of static credentials. The Bedrock resource scope is currently `*` and should be narrowed where supported.
 
 ---
 
@@ -127,12 +131,12 @@ To provision the Amazon ECR repository, ECS Fargate cluster, IAM roles, and Clou
 cd terraform
 terraform init
 terraform plan
-terraform apply -auto-approve
+terraform apply
 ```
 
-### Zero-Cost Teardown:
+### Teardown (verify billable resources are removed):
 ```bash
-terraform destroy -auto-approve
+terraform destroy
 ```
 
 ---
@@ -141,6 +145,6 @@ terraform destroy -auto-approve
 * **Why Fargate instead of self-managed EC2?**
   * *Fargate abstracts host operating system maintenance, eliminates server patching overhead, and scales on exact vCPU/memory requirements.*
 * **How is container security validated?**
-  * *The image is built in two stages to eliminate build tooling, runs as an unprivileged user (UID 10001), and undergoes automated Trivy vulnerability scanning inside GitHub Actions on every pull request.*
+  * *The image is built in two stages, runs as an unprivileged user (UID 10001), and undergoes advisory Trivy scanning in GitHub Actions. A blocking security gate is future work.*
 * **How are AWS credentials managed inside ECS?**
   * *No static AWS keys are stored in the container. The service assumes an IAM Task Role at runtime via the AWS ECS metadata service to interact with Amazon Bedrock.*

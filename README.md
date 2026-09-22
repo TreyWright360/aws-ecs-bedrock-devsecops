@@ -2,6 +2,8 @@
 
 > **Portfolio evidence status:** Application, container, tests, Terraform, and CI workflow are published. No dated ECS rollback exercise, latency benchmark, or passing vulnerability-gate report is checked in. The [AWS Cloud Operations Handbook](https://github.com/TreyWright360/aws-cloud-operations-handbook) tracks the remaining operational proof.
 
+See the [project case study](CASE-STUDY.md) for architecture, implementation, failure modes, evidence, and production improvements.
+
 ![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)

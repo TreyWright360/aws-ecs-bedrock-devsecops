@@ -203,8 +203,11 @@ resource "aws_ecs_task_definition" "app" {
           value = var.aws_region
         },
         {
-          name  = "BEDROCK_MODEL_ID"
-          value = "anthropic.claude-3-5-haiku-20241022-v1:0"
+          name = "BEDROCK_MODEL_ID"
+          # anthropic.claude-3-5-haiku-20241022-v1:0 reached end of life.
+          # Newer models require a cross-region inference profile ID
+          # rather than the bare model ID for on-demand invocation.
+          value = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
         }
       ]
 

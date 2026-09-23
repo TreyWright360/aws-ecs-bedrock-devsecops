@@ -25,7 +25,7 @@ app.add_middleware(
 )
 
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
-DEFAULT_MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-5-haiku-20241022-v1:0")
+DEFAULT_MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "us.anthropic.claude-haiku-4-5-20251001-v1:0")
 
 # Initialize boto3 Bedrock client lazily
 bedrock_client = None

@@ -73,7 +73,7 @@ See the [project case study](CASE-STUDY.md) for architecture, implementation, fa
   "status": "healthy",
   "service": "aws-bedrock-microservice",
   "region": "us-east-1",
-  "default_model": "anthropic.claude-3-5-haiku-20241022-v1:0",
+  "default_model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
   "timestamp": 1725642000.12
 }
 ```
@@ -93,7 +93,7 @@ See the [project case study](CASE-STUDY.md) for architecture, implementation, fa
 {
   "task": "summarize",
   "result": "Cloud computing eliminates physical data center management, enabling dynamic scalability. Pairing it with Infrastructure as Code and DevSecOps pipelines guarantees operational security and deployment consistency.",
-  "model": "anthropic.claude-3-5-haiku-20241022-v1:0",
+  "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
   "source": "aws-bedrock",
   "execution_time_ms": 342.15
 }

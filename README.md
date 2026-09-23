@@ -27,11 +27,15 @@ See the [project case study](CASE-STUDY.md) for architecture, implementation, fa
 ## 🏗️ Architecture & Data Flow
 
 ```text
-[ Developer Push ] ──▶ [ GitHub Actions CI/CD ]
+[ Developer Push/PR ] ──▶ [ CI Validation: devsecops.yml ]
                               │
                               ├──▶ Step 1: Flake8 Linting & Pytest Unit Tests
-                              ├──▶ Step 2: Trivy Container CVE Vulnerability Scan
-                              └──▶ Step 3: Build & Push Docker Image
+                              └──▶ Step 2: Trivy Container CVE Vulnerability Scan (advisory)
+
+[ Manual workflow_dispatch ] ──▶ [ Deploy: deploy-production.yml ]
+                              │   (requires production environment approval)
+                              ├──▶ Build & Scan Image
+                              └──▶ Build & Push Docker Image
                                                │
                                                ▼
                                      [ Amazon ECR Repository ]
@@ -55,6 +59,7 @@ See the [project case study](CASE-STUDY.md) for architecture, implementation, fa
 2. **Multi-Stage Build Pipeline:** Strips compilers, build headers, and package caches from the runtime image to reduce attack surface and maintain image footprint under 160MB.
 3. **Vulnerability scan:** GitHub Actions builds and scans the image with **Trivy**, but the current `exit-code: "0"` means the scan is advisory.
 4. **Role-based task identity:** The application uses an ECS task role instead of static credentials. The Bedrock resource scope is currently `*` and should be narrowed where supported.
+5. **Deployment safeguard:** Pushing to `main` only runs lint, tests, and the advisory Trivy scan — it never touches AWS. Pushing an image to ECR requires manually triggering `deploy-production.yml` and approval on the protected `production` environment.
 
 ---
 

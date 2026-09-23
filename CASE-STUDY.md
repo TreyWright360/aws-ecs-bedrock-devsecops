@@ -8,11 +8,11 @@ Model a containerized document-analysis service with a reproducible AWS deployme
 
 ## Architecture and technologies
 
-The [FastAPI application](app/main.py) calls Bedrock through an ECS task role. The [Dockerfile](Dockerfile) builds a non-root runtime image. [Terraform](terraform/main.tf) defines ECR, ECS Fargate, IAM roles, a log group, and a security group. [GitHub Actions](.github/workflows/devsecops.yml) runs lint, tests, image scanning, and ECR push steps.
+The [FastAPI application](app/main.py) calls Bedrock through an ECS task role. The [Dockerfile](Dockerfile) builds a non-root runtime image. [Terraform](terraform/main.tf) defines ECR, ECS Fargate, IAM roles, a log group, and a security group. [GitHub Actions](.github/workflows/devsecops.yml) runs lint, tests, and image scanning on every push and pull request; it never touches AWS. A separate [manual, approval-gated workflow](.github/workflows/deploy-production.yml) pushes the image to ECR.
 
 ## What is implemented
 
-The code includes a health endpoint, API tests, and an image scan. The workflow pushes an image to ECR but does not update the ECS service to a new task definition or roll back a failed release. Trivy is advisory (`exit-code: "0"`).
+The code includes a health endpoint, API tests, and an image scan. Pushing to `main` only validates the code — it does not push an image or touch AWS. Pushing an image to ECR requires a manual `workflow_dispatch` run of `deploy-production.yml` and approval on the protected `production` environment; that workflow still does not update the ECS service to a new task definition or roll back a failed release. Trivy is advisory (`exit-code: "0"`) in both workflows.
 
 ## Failure modes and runbooks
 

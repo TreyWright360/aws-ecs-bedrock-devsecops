@@ -1,6 +1,6 @@
 # 🚀 Containerized GenAI Microservice on AWS ECS Fargate with DevSecOps
 
-> **Portfolio evidence status:** Application, container, tests, Terraform, and CI workflow are published. No dated ECS rollback exercise, latency benchmark, or passing vulnerability-gate report is checked in. The [AWS Cloud Operations Handbook](https://github.com/TreyWright360/aws-cloud-operations-handbook) tracks the remaining operational proof.
+> **Portfolio evidence status:** PARTIALLY TESTED. Deployed live to AWS on 2026-09-23 ([evidence](https://github.com/TreyWright360/aws-cloud-operations-handbook/blob/main/evidence/ecs-bedrock-deployment/INDEX.md)). `/health` is genuinely live. A real, unstaged instance of "Bedrock denied, health stays green" was found: `Converse` needs a use-case-details form this AWS account hasn't submitted, so `/api/analyze` silently falls back to canned text with `HTTP 200`. A bad-release lab confirmed the deployment has no circuit breaker — an unbounded crash-restart loop with no user-facing downtime, since ECS never replaces the last good task. Latency benchmark and a passing (non-advisory) vulnerability gate remain undone.
 
 See the [project case study](CASE-STUDY.md) for architecture, implementation, failure modes, evidence, and production improvements.
 

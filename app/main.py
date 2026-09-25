@@ -59,14 +59,59 @@ class AnalyzeResponse(BaseModel):
     execution_time_ms: float
 
 
+_bedrock_check_cache = {"checked_at": 0.0, "result": None}
+_BEDROCK_CHECK_TTL_SECONDS = 60
+
+
+def _check_bedrock_reachable() -> dict:
+    """
+    Best-effort Converse call against Bedrock, cached briefly so ALB's
+    frequent health polling doesn't hammer the API. This never affects the
+    liveness HTTP status code - it exists so a real account-level access gap
+    (e.g. a missing use-case-details form) shows up in monitoring instead of
+    being invisible behind a green /health check, which is exactly the gap
+    the 2026-09-23 lab found in production.
+    """
+    now = time.time()
+    cached = _bedrock_check_cache["result"]
+    if cached is not None and (now - _bedrock_check_cache["checked_at"]) < _BEDROCK_CHECK_TTL_SECONDS:
+        return cached
+
+    client = get_bedrock_client()
+    if client is None:
+        result = {"reachable": False, "detail": "bedrock client unavailable"}
+    else:
+        try:
+            client.converse(
+                modelId=DEFAULT_MODEL_ID,
+                messages=[{"role": "user", "content": [{"text": "ping"}]}],
+                inferenceConfig={"maxTokens": 1, "temperature": 0},
+            )
+            result = {"reachable": True, "detail": None}
+        except Exception as err:
+            result = {"reachable": False, "detail": str(err)[:300]}
+
+    _bedrock_check_cache["result"] = result
+    _bedrock_check_cache["checked_at"] = now
+    return result
+
+
 @app.get("/health", status_code=status.HTTP_200_OK)
 def health_check():
-    """Liveness probe used by ALB Target Group and ECS container health checks."""
+    """
+    Liveness probe used by ALB Target Group and ECS container health checks.
+    Always returns 200 for a live process - Bedrock reachability is reported
+    as data (bedrock.reachable), not as the HTTP status, since gating ALB
+    health on a downstream AWS dependency would let an account-level Bedrock
+    access issue take down an otherwise-healthy service.
+    """
+    bedrock_status = _check_bedrock_reachable()
     return {
         "status": "healthy",
         "service": "aws-bedrock-microservice",
         "region": AWS_REGION,
         "default_model": DEFAULT_MODEL_ID,
+        "bedrock": bedrock_status,
         "timestamp": time.time(),
     }
 

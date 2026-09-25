@@ -16,6 +16,9 @@ data "aws_subnets" "default" {
 resource "aws_ecr_repository" "app" {
   name                 = "${var.project_name}-${var.environment}"
   image_tag_mutability = "MUTABLE"
+  # Without this, `terraform destroy` fails on RepositoryNotEmptyException
+  # whenever an image has been pushed - confirmed by hitting it during teardown.
+  force_delete = true
 
   image_scanning_configuration {
     scan_on_push = true
@@ -229,6 +232,15 @@ resource "aws_ecs_service" "app" {
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 1
   launch_type     = "FARGATE"
+
+  # A bad release (crash-on-start) previously caused an unbounded retry loop
+  # with no automatic stop condition - confirmed by lab on 2026-09-23. This
+  # tells ECS to stop and roll back to the last stable task definition after
+  # repeated failures instead of retrying forever.
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
 
   network_configuration {
     subnets          = data.aws_subnets.default.ids

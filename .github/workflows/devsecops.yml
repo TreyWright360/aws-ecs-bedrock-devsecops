@@ -57,7 +57,7 @@ jobs:
         with:
           image-ref: "bedrock-microservice:${{ github.sha }}"
           format: "table"
-          exit-code: "0" # Set to 1 to break pipeline on CRITICAL in strict production
+          exit-code: "1" # Blocking: fails the build on CRITICAL/HIGH. Verified clean locally 2026-09-24.
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"

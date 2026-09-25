@@ -1,6 +1,6 @@
 # 🚀 Containerized GenAI Microservice on AWS ECS Fargate with DevSecOps
 
-> **Portfolio evidence status:** PARTIALLY TESTED. Deployed live to AWS on 2026-09-23 ([evidence](https://github.com/TreyWright360/aws-cloud-operations-handbook/blob/main/evidence/ecs-bedrock-deployment/INDEX.md)). `/health` is genuinely live. A real, unstaged instance of "Bedrock denied, health stays green" was found: `Converse` needs a use-case-details form this AWS account hasn't submitted, so `/api/analyze` silently falls back to canned text with `HTTP 200`. A bad-release lab confirmed the deployment has no circuit breaker — an unbounded crash-restart loop with no user-facing downtime, since ECS never replaces the last good task. Latency benchmark and a passing (non-advisory) vulnerability gate remain undone.
+> **Portfolio evidence status:** TESTED. Deployed live to AWS twice — 2026-09-23 and 2026-09-24 — each time torn down and verified clean afterward ([evidence](https://github.com/TreyWright360/aws-cloud-operations-handbook/blob/main/evidence/ecs-bedrock-deployment/INDEX.md)). `/health` is genuinely live and now reports real Bedrock reachability as data (`bedrock.reachable`): `Converse` needs a use-case-details form this AWS account hasn't submitted, so `/api/analyze` still falls back to canned text with `HTTP 200` — but that gap is now visible in the health payload instead of hidden in server logs. A first bad-release lab found the deployment had no circuit breaker; a `deployment_circuit_breaker` was added and re-tested — ECS rolled back the broken release **automatically**, no manual fix, in 4 minutes 14 seconds. A 20-request latency benchmark is checked in, and the Trivy gate is now blocking (`exit-code: "1"`), verified clean before the flip.
 
 See the [project case study](CASE-STUDY.md) for architecture, implementation, failure modes, evidence, and production improvements.
 
@@ -17,9 +17,10 @@ See the [project case study](CASE-STUDY.md) for architecture, implementation, fa
 * **Business Challenge:** Engineering teams required an automated, scalable microservice to process and summarize enterprise documents via generative AI, without exposing long-lived credentials or managing underlying virtual machine operating systems.
 * **Solution:** Developed a high-performance Python FastAPI service integrated with **Amazon Bedrock (Claude 3.5 Haiku)**, packaged into a hardened multi-stage Docker container running as an unprivileged non-root user, deployed to **Amazon ECS Fargate**, and secured with an automated **Trivy vulnerability scanning DevSecOps pipeline**.
 * **Key Metric Results:**
-  * 🔒 **Security scan defined:** GitHub Actions runs Trivy, currently with `exit-code: "0"`, so findings do not block deployment.
-  * ⚡ **Latency unmeasured:** No benchmark is checked in.
-  * 🛡️ **Task identity:** The ECS task role permits Bedrock invocation; its policy currently uses `Resource = "*"` and needs scoping review.
+  * 🔒 **Security scan blocking:** GitHub Actions runs Trivy with `exit-code: "1"` — a CRITICAL/HIGH finding fails the build. Verified clean (0 findings) against the real image before the gate was flipped from advisory.
+  * ⚡ **Latency measured:** 20-request benchmark against the live task — `/health` avg 1179.5ms, `/api/analyze` avg 1268.0ms (p95 1436.0ms). Measured client-side, not from inside AWS — see [evidence](https://github.com/TreyWright360/aws-cloud-operations-handbook/blob/main/evidence/ecs-bedrock-deployment/INDEX.md) for the caveat.
+  * 🔁 **Bad-release recovery automatic:** `deployment_circuit_breaker` rolls back a crashing release on its own — re-tested at 4m14s recovery with zero user-facing downtime.
+  * 🛡️ **Task identity:** The ECS task role permits Bedrock invocation; its policy currently uses `Resource = "*"` and still needs scoping — open item, not fixed.
   * 💰 **Cost unmeasured:** The ECS service has `desired_count = 1`, so it incurs running-task charges while deployed.
 
 ---
